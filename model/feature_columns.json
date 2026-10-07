@@ -1,0 +1,19 @@
+[
+    "hour",
+    "day_of_week",
+    "day_of_month",
+    "month",
+    "is_weekend",
+    "active_users",
+    "requests_per_min",
+    "orders_per_min",
+    "cpu_usage",
+    "memory_usage",
+    "network_usage",
+    "sales_type_code",
+    "event_active",
+    "event_announced",
+    "hours_until_event",
+    "event_duration_hours",
+    "event_intensity"
+]

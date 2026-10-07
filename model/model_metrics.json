@@ -1,0 +1,10 @@
+{
+    "model": "Random Forest Regression",
+    "target": "Next-hour CPU utilization",
+    "mae": 3.3756,
+    "rmse": 4.5324,
+    "r2_score": 0.9239,
+    "training_samples": 7007,
+    "testing_samples": 1752,
+    "features": 17
+}

@@ -1,0 +1,8 @@
+event_name,event_type,start_date,end_date,intensity
+Summer Sale,Seasonal,2026-05-01,2026-06-15,1.25
+Independence Sale,Seasonal,2026-08-10,2026-08-15,1.20
+Diwali Sale,Festival,2026-10-20,2026-10-22,1.75
+Mega Shopping Sale,Mega Sale,2026-11-01,2026-11-03,1.90
+Black Friday Sale,Mega Sale,2026-11-27,2026-11-29,1.80
+Christmas Sale,Festival,2026-12-20,2026-12-25,1.60
+New Year Sale,Festival,2026-12-28,2027-01-02,1.50

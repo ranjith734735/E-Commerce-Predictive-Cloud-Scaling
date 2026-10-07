@@ -1,0 +1,16 @@
+VIVA QUESTIONS
+
+Q: What is the main problem?
+A: E-commerce workload changes with normal days, weekends, seasonal periods and major sales. Reactive scaling may respond after the load has already increased.
+
+Q: What is your solution?
+A: The system automatically identifies upcoming sales periods from a calendar, predicts workload using machine learning and recommends cloud capacity before the expected peak.
+
+Q: Which ML algorithm is used?
+A: Random Forest Regression.
+
+Q: Does ML know festival dates by itself?
+A: No. The calendar provides event knowledge; ML learns the workload impact associated with the event context.
+
+Q: Is the cloud scaling real?
+A: The prototype simulates the scaling decision. The same decision layer can later be connected to AWS/Azure auto-scaling APIs.

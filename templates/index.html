@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>E-Commerce Predictive Auto-Scaling</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #f4f7fb;
+            --surface: #ffffff;
+            --surface-2: #f8fafc;
+            --border: #e5eaf1;
+            --text: #122033;
+            --muted: #6b7788;
+            --blue: #2563eb;
+            --blue-soft: #eaf2ff;
+            --violet: #7c3aed;
+            --violet-soft: #f1ebff;
+            --orange: #f97316;
+            --orange-soft: #fff3e8;
+            --green: #16a34a;
+            --green-soft: #eaf8ef;
+            --red: #dc2626;
+            --red-soft: #fff0f0;
+            --cyan: #0891b2;
+            --cyan-soft: #e8f8fb;
+            --shadow: 0 10px 28px rgba(15,23,42,.055);
+            --shadow-lg: 0 18px 45px rgba(15,23,42,.08);
+            --radius: 20px;
+        }
+
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        button, input, select { font: inherit; }
+        button { cursor: pointer; }
+
+        .shell {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 250px minmax(0,1fr);
+        }
+
+        .sidebar {
+            background: #fff;
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            z-index: 20;
+        }
+
+        .brand {
+            display:flex;
+            align-items:center;
+            gap:12px;
+            padding: 6px 10px 24px;
+        }
+        .brand-mark {
+            width:44px;
+            height:44px;
+            border-radius:14px;
+            display:grid;
+            place-items:center;
+            color:#fff;
+            font-size:21px;
+            background: linear-gradient(135deg,#2563eb,#7c3aed);
+            box-shadow: 0 10px 22px rgba(37,99,235,.24);
+        }
+        .brand-title { font-weight:850; font-size:15px; line-height:1.15; }
+        .brand-sub { font-size:11px; color:var(--muted); margin-top:4px; }
+
+        .nav-label {
+            padding: 12px 12px 8px;
+            font-size:10px;
+            letter-spacing:.11em;
+            text-transform:uppercase;
+            font-weight:800;
+            color:#98a2b3;
+        }
+        .nav {
+            display:grid;
+            gap:5px;
+        }
+        .nav a {
+            text-decoration:none;
+            color:#566273;
+            padding:11px 12px;
+            border-radius:12px;
+            display:flex;
+            align-items:center;
+            gap:10px;
+            font-size:13px;
+            font-weight:700;
+        }
+        .nav a:hover { background:var(--surface-2); color:var(--text); }
+        .nav a.active { background:var(--blue-soft); color:var(--blue); }
+        .nav-icon { width:18px; text-align:center; font-size:15px; }
+
+        .sidebar-foot {
+            position:absolute;
+            bottom:18px;
+            left:16px;
+            right:16px;
+            background: var(--surface-2);
+            border:1px solid var(--border);
+            border-radius:15px;
+            padding:13px;
+        }
+        .mini-status {
+            display:flex; align-items:center; gap:8px;
+            font-size:11px; font-weight:800;
+        }
+        .dot {
+            width:8px;height:8px;border-radius:50%; background:#16a34a;
+            box-shadow:0 0 0 5px rgba(22,163,74,.09);
+        }
+        .foot-note { color:var(--muted); font-size:10px; margin-top:6px; line-height:1.5; }
+
+        .main { min-width:0; }
+        .topbar {
+            background: rgba(255,255,255,.9);
+            backdrop-filter: blur(14px);
+            border-bottom:1px solid var(--border);
+            position:sticky;
+            top:0;
+            z-index:15;
+        }
+        .topbar-inner {
+            min-height:78px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:18px;
+            padding: 14px 30px;
+        }
+        .page-title h1 { margin:0; font-size:22px; letter-spacing:-.5px; }
+        .page-title p { margin:3px 0 0; font-size:12px; color:var(--muted); }
+        .top-actions { display:flex; align-items:center; gap:10px; }
+        .live-pill {
+            display:flex; align-items:center; gap:8px;
+            padding:9px 12px; border-radius:999px;
+            background:var(--green-soft); color:#15803d;
+            border:1px solid #ccefd6; font-size:11px; font-weight:800;
+        }
+        .clock {
+            background:#fff;
+            border:1px solid var(--border);
+            border-radius:11px;
+            padding:9px 12px;
+            color:#4d5a6a;
+            font-size:11px;
+            font-weight:700;
+        }
+
+        .content { padding:28px 30px 50px; }
+        .container { max-width:1450px; margin:0 auto; }
+
+        .hero {
+            position:relative;
+            overflow:hidden;
+            border-radius:25px;
+            background: linear-gradient(120deg,#0f3b9d 0%,#2563eb 48%,#7c3aed 100%);
+            color:#fff;
+            padding:28px;
+            box-shadow:var(--shadow-lg);
+            margin-bottom:20px;
+        }
+        .hero::before, .hero::after {
+            content:""; position:absolute; border-radius:50%; pointer-events:none;
+        }
+        .hero::before { width:250px;height:250px;right:-90px;top:-120px;background:rgba(255,255,255,.11); }
+        .hero::after { width:170px;height:170px;right:150px;bottom:-110px;background:rgba(255,255,255,.08); }
+        .hero-grid {
+            display:grid;
+            grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);
+            gap:24px;
+            align-items:end;
+            position:relative;
+            z-index:1;
+        }
+        .eyebrow { font-size:10px; letter-spacing:.12em; font-weight:850; opacity:.76; text-transform:uppercase; }
+        .hero h2 { margin:8px 0 7px; font-size:30px; letter-spacing:-.9px; }
+        .hero p { margin:0; max-width:700px; color:rgba(255,255,255,.82); font-size:13px; line-height:1.65; }
+        .hero-event {
+            background:rgba(255,255,255,.11);
+            border:1px solid rgba(255,255,255,.18);
+            border-radius:18px;
+            padding:18px;
+        }
+        .hero-event-label { font-size:10px; text-transform:uppercase; letter-spacing:.1em; opacity:.72; font-weight:800; }
+        .hero-event-name { font-size:20px; font-weight:850; margin-top:6px; }
+        .hero-event-meta { display:flex; flex-wrap:wrap; gap:7px; margin-top:9px; }
+        .hero-chip { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.16); border-radius:999px; padding:6px 9px; font-size:10px; }
+
+        .section-head {
+            display:flex; align-items:end; justify-content:space-between; gap:16px;
+            margin:0 0 13px;
+        }
+        .section-head h3 { margin:0; font-size:18px; letter-spacing:-.35px; }
+        .section-head p { margin:4px 0 0; color:var(--muted); font-size:12px; }
+        .section { margin-bottom:25px; }
+
+        .metrics {
+            display:grid;
+            grid-template-columns:repeat(4,minmax(0,1fr));
+            gap:13px;
+        }
+        .metric {
+            position:relative;
+            overflow:hidden;
+            background:#fff;
+            border:1px solid var(--border);
+            border-radius:18px;
+            padding:17px;
+            box-shadow:var(--shadow);
+        }
+        .metric::after {
+            content:""; position:absolute; width:75px; height:75px; border-radius:50%; right:-28px; top:-33px; opacity:.8;
+        }
+        .metric.blue::after { background:#dbeafe; }
+        .metric.purple::after { background:#ede9fe; }
+        .metric.orange::after { background:#ffedd5; }
+        .metric.green::after { background:#dcfce7; }
+        .metric.cyan::after { background:#cffafe; }
+        .metric.red::after { background:#fee2e2; }
+        .metric-top { display:flex; justify-content:space-between; align-items:center; gap:10px; position:relative; z-index:1; }
+        .metric-label { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.08em; font-weight:800; }
+        .metric-icon { width:30px;height:30px;border-radius:10px;display:grid;place-items:center;font-size:14px; }
+        .icon-blue { background:var(--blue-soft); color:var(--blue); }
+        .icon-purple { background:var(--violet-soft); color:var(--violet); }
+        .icon-orange { background:var(--orange-soft); color:var(--orange); }
+        .icon-green { background:var(--green-soft); color:var(--green); }
+        .icon-cyan { background:var(--cyan-soft); color:var(--cyan); }
+        .icon-red { background:var(--red-soft); color:var(--red); }
+        .metric-value { margin-top:12px; font-size:28px; font-weight:900; letter-spacing:-.7px; position:relative; z-index:1; }
+        .metric-unit { color:var(--muted); font-size:11px; font-weight:700; }
+        .metric-foot { margin-top:6px; color:#8a94a3; font-size:10px; }
+
+        .grid-2 {
+            display:grid;
+            grid-template-columns:minmax(0,1.4fr) minmax(320px,1fr);
+            gap:15px;
+        }
+        .card { background:#fff; border:1px solid var(--border); border-radius:20px; box-shadow:var(--shadow); }
+        .card-pad { padding:20px; }
+
+        .event-card {
+            background:linear-gradient(145deg,#fff,#fff9f3);
+            border:1px solid #fee1bf;
+        }
+        .event-header { display:flex; justify-content:space-between; gap:15px; align-items:flex-start; }
+        .event-title-wrap { display:flex; gap:12px; align-items:center; }
+        .event-logo {
+            width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:#ffedd5;color:#c2410c;font-size:20px;
+        }
+        .event-name { font-size:20px; font-weight:900; }
+        .event-sub { margin-top:3px; color:var(--muted); font-size:11px; }
+        .badge { border-radius:999px;padding:6px 9px;font-size:10px;font-weight:850; }
+        .badge-upcoming { background:#fff0d9; color:#b45309; }
+        .badge-active { background:#ffe4e6;color:#be123c; }
+        .badge-normal { background:#eaf8ef;color:#15803d; }
+        .event-kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:18px; }
+        .event-kpi { background:rgba(255,255,255,.78); border:1px solid #f8dfc8; border-radius:14px; padding:13px; }
+        .event-kpi span { display:block; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.06em; font-weight:750; }
+        .event-kpi strong { display:block; margin-top:5px; font-size:15px; }
+
+        .notice {
+            margin-top:14px;
+            background:#f9fbfd;
+            border:1px dashed #dce4ee;
+            border-radius:13px;
+            padding:12px 13px;
+            display:flex; gap:9px; align-items:flex-start;
+            color:#5f6b7b;
+            font-size:11px; line-height:1.55;
+        }
+
+        .reaction-card { padding:20px; }
+        .reaction-title { font-size:17px; font-weight:850; }
+        .reaction-sub { color:var(--muted); font-size:11px; margin-top:4px; line-height:1.55; }
+        .reaction-main { margin-top:16px; padding:16px; border-radius:15px; background:linear-gradient(135deg,#f5f8ff,#f8f5ff); border:1px solid #e2e9ff; }
+        .reaction-main-top { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+        .reaction-main-label { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em; font-weight:800; }
+        .reaction-main strong { font-size:25px; }
+        .progress { height:8px; background:#e8edf5; border-radius:999px; margin:12px 0 14px; overflow:hidden; }
+        .progress > div { height:100%; background:linear-gradient(90deg,#2563eb,#7c3aed); border-radius:999px; width:0%; transition:width .45s ease; }
+        .reaction-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:9px; }
+        .small-stat { padding:11px 12px; background:#fff; border:1px solid var(--border); border-radius:12px; }
+        .small-stat span { display:block; color:var(--muted); font-size:9px; text-transform:uppercase; font-weight:800; letter-spacing:.06em; }
+        .small-stat strong { display:block; margin-top:4px; font-size:14px; }
+
+        .chart-card { padding:20px; min-height:430px; }
+        .chart-top { display:flex; justify-content:space-between; align-items:start; gap:15px; }
+        .chart-title { font-size:17px; font-weight:850; }
+        .chart-caption { color:var(--muted); font-size:11px; margin-top:4px; }
+        .legend-pill { background:#f8fafc; border:1px solid var(--border); border-radius:999px; padding:7px 9px; color:#516071; font-size:10px; font-weight:750; }
+        .chart-box { height:340px; margin-top:16px; }
+
+        .prediction-card { padding:20px; }
+        .peak-card {
+            background:linear-gradient(135deg,#eff6ff,#f7f3ff);
+            border:1px solid #dfe7fb;
+            border-radius:17px;
+            padding:17px;
+        }
+        .peak-label { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.08em; font-weight:800; }
+        .peak-number { margin-top:3px; font-size:39px; font-weight:950; letter-spacing:-1.5px; }
+        .peak-number span { color:var(--muted); font-size:14px; font-weight:750; }
+        .peak-meta { color:var(--muted); font-size:10px; margin-top:4px; }
+        .prediction-list { margin-top:12px; display:grid; gap:9px; }
+        .prediction-row { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:11px 12px; background:#fff; border:1px solid var(--border); border-radius:12px; }
+        .prediction-row span { color:var(--muted); font-size:10px; }
+        .prediction-row strong { font-size:13px; }
+
+        .scale-panel {
+            padding:22px;
+            background:linear-gradient(135deg,#eef6ff,#f7f3ff);
+            border:1px solid #dbe7fb;
+            border-radius:22px;
+        }
+        .scale-top { display:flex; justify-content:space-between; align-items:end; gap:15px; }
+        .scale-title { font-size:18px; font-weight:850; }
+        .scale-sub { color:var(--muted); font-size:11px; margin-top:4px; }
+        .action-tag { border-radius:999px;padding:7px 10px;font-size:10px;font-weight:900; }
+        .tag-up { background:#fee2e2;color:#b91c1c; }
+        .tag-keep { background:#dcfce7;color:#166534; }
+        .tag-down { background:#e0f2fe;color:#0369a1; }
+        .scale-flow { display:grid; grid-template-columns:1fr 58px 1fr 58px 1fr; align-items:center; gap:8px; margin:20px 0; }
+        .scale-box { background:#fff; border:1px solid #dde6f3; border-radius:17px; padding:17px; text-align:center; }
+        .scale-box span { display:block; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.06em; font-weight:800; }
+        .scale-box strong { display:block; margin-top:4px; font-size:34px; }
+        .scale-arrow { text-align:center; color:#64748b; font-size:23px; font-weight:900; }
+        .scale-message { background:#fff; border:1px solid var(--border); border-radius:14px; padding:13px; color:#566273; font-size:11px; line-height:1.6; }
+        .button-row { display:flex; flex-wrap:wrap; gap:9px; margin-top:14px; }
+        .btn { border-radius:11px; padding:10px 13px; font-size:11px; font-weight:800; border:1px solid transparent; }
+        .btn-primary { background:var(--blue); color:#fff; box-shadow:0 7px 16px rgba(37,99,235,.17); }
+        .btn-secondary { background:#fff; color:#334155; border-color:#d8e1ec; }
+        .btn-danger { background:#fff3f3; color:#be123c; border-color:#fecdd3; }
+        .btn:disabled { opacity:.5; cursor:not-allowed; }
+
+        .model-grid { display:grid; grid-template-columns:1.5fr repeat(3,1fr); gap:12px; }
+        .model-box { background:#fff; border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:var(--shadow); }
+        .model-box span { display:block; color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.06em; font-weight:800; }
+        .model-box strong { display:block; margin-top:6px; font-size:20px; }
+
+        .calendar-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+        .calendar-item { background:#fff; border:1px solid var(--border); border-radius:16px; padding:15px; box-shadow:var(--shadow); }
+        .calendar-item.top { border-color:#cbdcfb; box-shadow:0 10px 25px rgba(37,99,235,.08); }
+        .calendar-icon { width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#f1f5f9;margin-bottom:10px; }
+        .calendar-item h4 { margin:0; font-size:14px; }
+        .calendar-date { margin-top:3px; color:var(--blue); font-size:11px; font-weight:800; }
+        .calendar-meta { margin-top:7px; color:var(--muted); font-size:10px; line-height:1.5; }
+
+        .flow-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:11px; }
+        .flow-item { background:#fff; border:1px solid var(--border); border-radius:17px; padding:17px; box-shadow:var(--shadow); position:relative; }
+        .flow-item:not(:last-child)::after { content:"→"; position:absolute; right:-16px; top:50%; transform:translateY(-50%); color:#a0a9b7; font-size:17px; font-weight:900; z-index:2; }
+        .flow-number { font-size:10px; font-weight:900; color:#98a2b3; }
+        .flow-ico { width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:18px;margin:10px 0; }
+        .flow-item h4 { margin:0; font-size:13px; }
+        .flow-item p { margin:5px 0 0; color:var(--muted); font-size:10px; line-height:1.55; }
+
+        .footer { text-align:center; color:#96a0ad; font-size:10px; padding-top:5px; }
+        .toast {
+            position:fixed; right:20px; bottom:20px; z-index:100;
+            background:#102033; color:#fff; border-radius:12px; padding:12px 14px;
+            box-shadow:var(--shadow-lg); font-size:11px; max-width:320px;
+            transform:translateY(20px); opacity:0; pointer-events:none; transition:.25s ease;
+        }
+        .toast.show { transform:translateY(0); opacity:1; }
+
+        @media (max-width: 1200px) {
+            .metrics { grid-template-columns:repeat(3,1fr); }
+            .calendar-grid { grid-template-columns:repeat(3,1fr); }
+            .flow-grid { grid-template-columns:repeat(3,1fr); }
+            .flow-item:not(:last-child)::after { display:none; }
+        }
+        @media (max-width: 980px) {
+            .shell { grid-template-columns:1fr; }
+            .sidebar { display:none; }
+            .hero-grid, .grid-2 { grid-template-columns:1fr; }
+            .topbar-inner { padding:14px 18px; }
+            .content { padding:20px 18px 45px; }
+            .metrics { grid-template-columns:repeat(2,1fr); }
+            .model-grid { grid-template-columns:repeat(2,1fr); }
+            .calendar-grid { grid-template-columns:repeat(2,1fr); }
+            .flow-grid { grid-template-columns:repeat(2,1fr); }
+        }
+        @media (max-width: 640px) {
+            .top-actions .clock { display:none; }
+            .hero { padding:20px; }
+            .hero h2 { font-size:24px; }
+            .metrics, .model-grid, .calendar-grid, .flow-grid { grid-template-columns:1fr; }
+            .event-kpis, .reaction-grid { grid-template-columns:1fr; }
+            .scale-flow { grid-template-columns:1fr; }
+            .scale-arrow { transform:rotate(90deg); }
+            .section-head { align-items:flex-start; flex-direction:column; }
+        }
+    </style>
+</head>
+<body>
+<div class="shell">
+
+    <aside class="sidebar">
+        <div class="brand">
+            <div class="brand-mark">☁</div>
+            <div>
+                <div class="brand-title">Predictive<br/>Auto-Scaling</div>
+                <div class="brand-sub">E-Commerce Cloud Lab</div>
+            </div>
+        </div>
+
+        <div class="nav-label">Workspace</div>
+        <nav class="nav">
+            <a href="#overview" class="active"><span class="nav-icon">⌂</span>Overview</a>
+            <a href="#events"><span class="nav-icon">◫</span>Sales Events</a>
+            <a href="#prediction"><span class="nav-icon">◌</span>ML Prediction</a>
+            <a href="#scaling"><span class="nav-icon">⇄</span>Cloud Scaling</a>
+            <a href="#model"><span class="nav-icon">◎</span>Model Metrics</a>
+            <a href="#calendar"><span class="nav-icon">▦</span>Calendar</a>
+        </nav>
+
+        <div class="nav-label">Project</div>
+        <nav class="nav">
+            <a href="#flow"><span class="nav-icon">➜</span>System Flow</a>
+        </nav>
+
+        <div class="sidebar-foot">
+            <div class="mini-status"><span class="dot"></span> API Connected</div>
+            <div class="foot-note">Dashboard values come from your Flask APIs, dataset and trained Random Forest model.</div>
+        </div>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <div class="topbar-inner">
+                <div class="page-title">
+                    <h1>Cloud Resource Optimization</h1>
+                    <p>Event-aware workload forecasting and predictive capacity planning</p>
+                </div>
+                <div class="top-actions">
+                    <div class="live-pill"><span class="dot"></span> Monitoring</div>
+                    <div class="clock" id="topClock">--</div>
+                </div>
+            </div>
+        </header>
+
+        <main class="content">
+            <div class="container">
+
+                <section class="hero" id="overview">
+                    <div class="hero-grid">
+                        <div>
+                            <div class="eyebrow">Machine Learning + Cloud Simulation</div>
+                            <h2>Predict the peak. Prepare before it arrives.</h2>
+                            <p>
+                                The system reads the current e-commerce workload, checks the sales calendar,
+                                predicts future CPU utilization, and recommends cloud capacity before a high-demand period.
+                            </p>
+                        </div>
+                        <div class="hero-event">
+                            <div class="hero-event-label">Automatic event awareness</div>
+                            <div class="hero-event-name" id="heroEventName">Checking calendar...</div>
+                            <div class="hero-event-meta">
+                                <span class="hero-chip" id="heroEventDate">--</span>
+                                <span class="hero-chip" id="heroEventCountdown">--</span>
+                                <span class="hero-chip" id="heroEventType">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section">
+                    <div class="section-head">
+                        <div>
+                            <h3>Current E-Commerce Workload</h3>
+                            <p>Live values from <code>/api/data</code> and automatic sales classification.</p>
+                        </div>
+                        <span class="badge badge-normal" id="salesBadge">Loading...</span>
+                    </div>
+
+                    <div class="metrics">
+                        <div class="metric blue">
+                            <div class="metric-top"><div class="metric-label">CPU Utilization</div><div class="metric-icon icon-blue">◔</div></div>
+                            <div class="metric-value"><span id="cpu">--</span><span class="metric-unit">%</span></div>
+                            <div class="metric-foot">Current server load</div>
+                        </div>
+                        <div class="metric purple">
+                            <div class="metric-top"><div class="metric-label">Active Users</div><div class="metric-icon icon-purple">◉</div></div>
+                            <div class="metric-value" id="users">--</div>
+                            <div class="metric-foot">Connected shoppers</div>
+                        </div>
+                        <div class="metric orange">
+                            <div class="metric-top"><div class="metric-label">Requests / Min</div><div class="metric-icon icon-orange">↗</div></div>
+                            <div class="metric-value" id="requests">--</div>
+                            <div class="metric-foot">Application traffic</div>
+                        </div>
+                        <div class="metric green">
+                            <div class="metric-top"><div class="metric-label">Orders / Min</div><div class="metric-icon icon-green">🛒</div></div>
+                            <div class="metric-value" id="orders">--</div>
+                            <div class="metric-foot">Transaction rate</div>
+                        </div>
+                        <div class="metric cyan">
+                            <div class="metric-top"><div class="metric-label">Memory</div><div class="metric-icon icon-cyan">▦</div></div>
+                            <div class="metric-value"><span id="memory">--</span><span class="metric-unit">%</span></div>
+                            <div class="metric-foot">Current memory use</div>
+                        </div>
+                        <div class="metric purple">
+                            <div class="metric-top"><div class="metric-label">Network</div><div class="metric-icon icon-purple">⌁</div></div>
+                            <div class="metric-value"><span id="network">--</span><span class="metric-unit">%</span></div>
+                            <div class="metric-foot">Current network use</div>
+                        </div>
+                        <div class="metric red">
+                            <div class="metric-top"><div class="metric-label">Cloud Instances</div><div class="metric-icon icon-red">☁</div></div>
+                            <div class="metric-value" id="instances">--</div>
+                            <div class="metric-foot">Running capacity</div>
+                        </div>
+                        <div class="metric orange">
+                            <div class="metric-top"><div class="metric-label">Estimated Daily Orders</div><div class="metric-icon icon-orange">▤</div></div>
+                            <div class="metric-value" id="ordersToday">--</div>
+                            <div class="metric-foot">Dataset-based estimate</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section" id="events">
+                    <div class="section-head">
+                        <div>
+                            <h3>Automatic Sales / Event Detection</h3>
+                            <p>The application identifies the next scheduled sales period without manual selection.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="card event-card card-pad">
+                            <div class="event-header">
+                                <div class="event-title-wrap">
+                                    <div class="event-logo">📅</div>
+                                    <div>
+                                        <div class="event-name" id="eventName">Loading...</div>
+                                        <div class="event-sub" id="eventType">Checking calendar...</div>
+                                    </div>
+                                </div>
+                                <span class="badge badge-upcoming" id="eventBadge">UPCOMING</span>
+                            </div>
+
+                            <div class="event-kpis">
+                                <div class="event-kpi"><span>Start</span><strong id="eventStart">--</strong></div>
+                                <div class="event-kpi"><span>Time Remaining</span><strong id="eventCountdown">--</strong></div>
+                                <div class="event-kpi"><span>Expected Intensity</span><strong id="eventIntensity">--</strong></div>
+                            </div>
+
+                            <div class="notice">
+                                <span>💡</span>
+                                <span>Event dates are supplied through the project's simulation calendar. The ML model learns the workload effect of each sales type; it does not invent future event dates.</span>
+                            </div>
+                        </div>
+
+                        <div class="card reaction-card">
+                            <div class="reaction-title">System response</div>
+                            <div class="reaction-sub">When a future sales event approaches, the prediction engine estimates the workload impact and recommended capacity.</div>
+
+                            <div class="reaction-main">
+                                <div class="reaction-main-top">
+                                    <div class="reaction-main-label">Recommended Capacity</div>
+                                    <strong id="reactionRequired">--</strong>
+                                </div>
+                                <div class="progress"><div id="capacityProgress"></div></div>
+                                <div class="reaction-grid">
+                                    <div class="small-stat"><span>Current</span><strong id="reactionCurrent">5</strong></div>
+                                    <div class="small-stat"><span>Action</span><strong id="reactionAction">--</strong></div>
+                                    <div class="small-stat"><span>Preparation</span><strong id="reactionPreparation">--</strong></div>
+                                    <div class="small-stat"><span>Target CPU</span><strong>70%</strong></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section" id="prediction">
+                    <div class="section-head">
+                        <div>
+                            <h3>Machine Learning Workload Prediction</h3>
+                            <p>Random Forest regression forecasts next-hour CPU using workload, time and sales/event features.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="card chart-card">
+                            <div class="chart-top">
+                                <div>
+                                    <div class="chart-title">Future CPU Utilization</div>
+                                    <div class="chart-caption">Predicted workload horizon</div>
+                                </div>
+                                <div class="legend-pill">Target ≤ 70%</div>
+                            </div>
+                            <div class="chart-box"><canvas id="forecastChart"></canvas></div>
+                        </div>
+
+                        <div class="card prediction-card">
+                            <div class="peak-card">
+                                <div class="peak-label">Predicted Peak CPU</div>
+                                <div class="peak-number"><span id="peakCpu">--</span><span>%</span></div>
+                                <div class="peak-meta" id="peakTime">Peak time: --</div>
+                            </div>
+
+                            <div class="prediction-list">
+                                <div class="prediction-row"><span>Current sales state</span><strong id="predictionSales">--</strong></div>
+                                <div class="prediction-row"><span>Upcoming event</span><strong id="predictionEvent">--</strong></div>
+                                <div class="prediction-row"><span>Required instances</span><strong id="requiredInstances">--</strong></div>
+                                <div class="prediction-row"><span>Scaling action</span><strong id="scalingAction">--</strong></div>
+                            </div>
+
+                            <div class="notice" style="margin-top:12px;">
+                                <span>🤖</span>
+                                <span id="predictionMessage">Loading prediction...</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section" id="scaling">
+                    <div class="section-head">
+                        <div>
+                            <h3>Predictive Cloud Scaling</h3>
+                            <p>The simulator prepares capacity before the predicted workload peak.</p>
+                        </div>
+                    </div>
+
+                    <div class="scale-panel">
+                        <div class="scale-top">
+                            <div>
+                                <div class="scale-title">Capacity Recommendation</div>
+                                <div class="scale-sub">Baseline capacity is 5 instances with a 70% target CPU.</div>
+                            </div>
+                            <span id="actionBadge" class="action-tag tag-keep">Maintain</span>
+                        </div>
+
+                        <div class="scale-flow">
+                            <div class="scale-box"><span>Current</span><strong id="currentScale">--</strong></div>
+                            <div class="scale-arrow">→</div>
+                            <div class="scale-box"><span>Recommended</span><strong id="recommendedScale">--</strong></div>
+                            <div class="scale-arrow">→</div>
+                            <div class="scale-box"><span>Target CPU</span><strong>70%</strong></div>
+                        </div>
+
+                        <div class="scale-message" id="scalingMessage">Loading scaling analysis...</div>
+
+                        <div class="button-row">
+                            <button class="btn btn-primary" onclick="prepareScaling()">Prepare Scaling</button>
+                            <button class="btn btn-secondary" onclick="executeScaling()">Execute Scaling Demo</button>
+                            <button class="btn btn-danger" onclick="scaleDown()">Scale Down to Baseline</button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section" id="model">
+                    <div class="section-head">
+                        <div>
+                            <h3>ML Model Performance</h3>
+                            <p>Metrics read from the trained model artifact.</p>
+                        </div>
+                    </div>
+                    <div class="model-grid">
+                        <div class="model-box"><span>Model</span><strong id="modelName" style="font-size:16px;">Random Forest Regression</strong></div>
+                        <div class="model-box"><span>MAE</span><strong id="modelMae">--</strong></div>
+                        <div class="model-box"><span>RMSE</span><strong id="modelRmse">--</strong></div>
+                        <div class="model-box"><span>R² Score</span><strong id="modelR2">--</strong></div>
+                    </div>
+                </section>
+
+                <section class="section" id="calendar">
+                    <div class="section-head">
+                        <div>
+                            <h3>Sales Event Calendar</h3>
+                            <p>Scheduled simulation events available to the automatic event detector.</p>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid">
+                        <div class="loading">Loading calendar...</div>
+                    </div>
+                </section>
+
+                <section class="section" id="flow">
+                    <div class="section-head">
+                        <div>
+                            <h3>How the System Works</h3>
+                            <p>Five connected stages from calendar awareness to cloud capacity planning.</p>
+                        </div>
+                    </div>
+                    <div class="flow-grid">
+                        <div class="flow-item">
+                            <div class="flow-number">01</div><div class="flow-ico" style="background:#dbeafe;">📅</div>
+                            <h4>Calendar Awareness</h4><p>Checks the current date and finds an upcoming sales period.</p>
+                        </div>
+                        <div class="flow-item">
+                            <div class="flow-number">02</div><div class="flow-ico" style="background:#dcfce7;">📊</div>
+                            <h4>Workload Signals</h4><p>Reads users, requests, orders and infrastructure metrics.</p>
+                        </div>
+                        <div class="flow-item">
+                            <div class="flow-number">03</div><div class="flow-ico" style="background:#fef3c7;">🤖</div>
+                            <h4>ML Forecast</h4><p>Predicts future CPU utilization from learned workload patterns.</p>
+                        </div>
+                        <div class="flow-item">
+                            <div class="flow-number">04</div><div class="flow-ico" style="background:#fce7f3;">🧮</div>
+                            <h4>Capacity Decision</h4><p>Converts the predicted peak into required cloud instances.</p>
+                        </div>
+                        <div class="flow-item">
+                            <div class="flow-number">05</div><div class="flow-ico" style="background:#ede9fe;">⚡</div>
+                            <h4>Predictive Action</h4><p>Prepares, executes or releases capacity through the simulator.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <div class="footer">E-Commerce Predictive Auto-Scaling • Machine Learning + Cloud Resource Optimization</div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    let forecastChart = null;
+
+    const el = id => document.getElementById(id);
+
+    function fmt(value, digits = 0) {
+        if (value === null || value === undefined || value === "") return "--";
+        const n = Number(value);
+        if (!Number.isFinite(n)) return String(value);
+        return n.toLocaleString("en-IN", { maximumFractionDigits: digits, minimumFractionDigits: digits });
+    }
+
+    function dateFmt(value, short = false) {
+        if (!value) return "--";
+        const d = new Date(value);
+        if (Number.isNaN(d.getTime())) return String(value);
+        return d.toLocaleString("en-IN", short ? {
+            day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit"
+        } : {
+            day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit"
+        });
+    }
+
+    function countdown(hours) {
+        if (hours === null || hours === undefined) return "--";
+        hours = Number(hours);
+        if (!Number.isFinite(hours)) return "--";
+        if (hours <= 0) return "Active / starting";
+        const days = Math.floor(hours / 24);
+        const hrs = Math.floor(hours % 24);
+        if (days) return `${days}d ${hrs}h`;
+        return `${hrs}h`;
+    }
+
+    function set(id, value) {
+        if (el(id)) el(id).textContent = value ?? "--";
+    }
+
+    function setAction(action) {
+        const tag = el("actionBadge");
+        tag.className = "action-tag";
+        if (action === "Scale Up") tag.classList.add("tag-up");
+        else if (action === "Scale Down") tag.classList.add("tag-down");
+        else tag.classList.add("tag-keep");
+        tag.textContent = action || "Maintain";
+    }
+
+    function setSalesBadge(type, active) {
+        const b = el("salesBadge");
+        b.className = "badge";
+        if (active) { b.classList.add("badge-active"); b.textContent = "ACTIVE EVENT"; }
+        else if (type === "Normal Sales") { b.classList.add("badge-normal"); b.textContent = "NORMAL SALES"; }
+        else { b.classList.add("badge-upcoming"); b.textContent = type || "SALES EVENT"; }
+    }
+
+    function showToast(message) {
+        const t = el("toast");
+        t.textContent = message;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2600);
+    }
+
+    async function loadCurrentData() {
+        try {
+            const r = await fetch(`/api/data?ts=${Date.now()}`, { cache:"no-store" });
+            if (!r.ok) throw new Error(`API ${r.status}`);
+            const j = await r.json();
+            if (!j.success) throw new Error(j.error || "Data request failed");
+            const d = j.data;
+            const daily = d.daily_summary || {};
+            const next = d.upcoming_event;
+
+            set("cpu", fmt(d.cpu_usage,2));
+            set("users", fmt(d.active_users));
+            set("requests", fmt(d.requests_per_min));
+            set("orders", fmt(d.orders_per_min));
+            set("memory", fmt(d.memory_usage,2));
+            set("network", fmt(d.network_usage,2));
+            set("instances", fmt(d.current_instances));
+            set("ordersToday", fmt(daily.estimated_orders_today));
+            setSalesBadge(d.sales_type, d.event_active);
+
+            if (next) {
+                set("heroEventName", next.name);
+                set("heroEventDate", dateFmt(next.start, true));
+                set("heroEventCountdown", countdown(next.hours_until));
+                set("heroEventType", next.type);
+
+                set("eventName", next.name);
+                set("eventType", next.type);
+                set("eventStart", dateFmt(next.start));
+                set("eventCountdown", countdown(next.hours_until));
+                set("eventIntensity", `× ${next.intensity}`);
+
+                el("eventBadge").className = "badge badge-upcoming";
+                el("eventBadge").textContent = "UPCOMING";
+            } else {
+                set("heroEventName", "No Upcoming Event");
+                set("heroEventDate", "Normal workload");
+                set("heroEventCountdown", "Monitoring");
+                set("heroEventType", "Normal Sales");
+                set("eventName", "No Upcoming Event");
+                set("eventType", "Normal workload period");
+                set("eventStart", "--");
+                set("eventCountdown", "--");
+                set("eventIntensity", "--");
+            }
+
+            set("reactionCurrent", fmt(d.current_instances));
+        } catch (e) {
+            console.error(e);
+            set("salesType", "API error");
+            showToast(`Current data unavailable: ${e.message}`);
+        }
+    }
+
+    async function loadForecast() {
+        try {
+            const r = await fetch(`/api/forecast?ts=${Date.now()}`, { cache:"no-store" });
+            if (!r.ok) throw new Error(`Forecast API ${r.status}`);
+            const j = await r.json();
+            if (!j.success) throw new Error(j.error || "Forecast request failed");
+            const a = j.analysis;
+
+            set("peakCpu", fmt(a.peak_cpu,2));
+            set("peakTime", `Peak time: ${dateFmt(a.peak_time)}`);
+            set("requiredInstances", fmt(a.required_instances));
+            set("scalingAction", a.scaling_action);
+            set("recommendedScale", fmt(a.required_instances));
+            set("currentScale", fmt(a.baseline_instances));
+            set("predictionSales", a.current_sales_type);
+            set("predictionEvent", a.upcoming_event || "None");
+            set("reactionRequired", fmt(a.required_instances));
+            set("reactionAction", a.scaling_action);
+            set("reactionPreparation", a.prepare_scaling_now ? "Prepare now" : (a.upcoming_event ? "Monitoring" : "Not required"));
+            setAction(a.scaling_action);
+
+            const progress = Math.min(100, Math.max(0, Number(a.required_instances) / 10 * 100));
+            el("capacityProgress").style.width = `${progress}%`;
+
+            let msg = "";
+            if (a.prepare_scaling_now) {
+                msg = `The upcoming ${a.upcoming_event} is inside the preparation window. Prepare ${a.required_instances} instances before the predicted workload peak.`;
+            } else if (a.upcoming_event) {
+                msg = `${a.upcoming_event} is already known from the event calendar. The system is monitoring the future workload and will prepare capacity when the event enters its preparation window.`;
+            } else {
+                msg = "No special event currently requires predictive preparation. The system is monitoring normal e-commerce workload.";
+            }
+            set("predictionMessage", msg);
+            set("scalingMessage", msg);
+            drawForecastChart(a.forecast || []);
+        } catch (e) {
+            console.error(e);
+            set("predictionMessage", `Forecast unavailable: ${e.message}`);
+            set("scalingMessage", `Forecast unavailable: ${e.message}`);
+        }
+    }
+
+    function drawForecastChart(rows) {
+        const c = el("forecastChart");
+        if (!c) return;
+        if (forecastChart) forecastChart.destroy();
+        if (!rows.length) return;
+
+        const labels = rows.map(x => new Date(x.timestamp).toLocaleString("en-IN", { day:"2-digit", month:"short", hour:"2-digit" }));
+        const values = rows.map(x => Number(x.predicted_cpu));
+
+        forecastChart = new Chart(c, {
+            type:"line",
+            data:{
+                labels,
+                datasets:[{
+                    label:"Predicted CPU %",
+                    data:values,
+                    borderColor:"#2563eb",
+                    backgroundColor:"rgba(37,99,235,.09)",
+                    fill:true,
+                    tension:.35,
+                    borderWidth:2.5,
+                    pointRadius:0
+                },{
+                    label:"Target 70%",
+                    data:values.map(() => 70),
+                    borderColor:"rgba(220,38,38,.55)",
+                    borderDash:[7,6],
+                    borderWidth:1.5,
+                    pointRadius:0,
+                    fill:false,
+                    tension:0
+                }]
+            },
+            options:{
+                responsive:true,
+                maintainAspectRatio:false,
+                interaction:{intersect:false,mode:"index"},
+                plugins:{legend:{labels:{usePointStyle:true,font:{size:10}}}},
+                scales:{
+                    y:{min:0,max:100,title:{display:true,text:"CPU Utilization (%)",font:{size:10}},ticks:{font:{size:9}}},
+                    x:{ticks:{maxTicksLimit:12,font:{size:9}}}
+                }
+            }
+        });
+    }
+
+    async function loadMetrics() {
+        try {
+            const r = await fetch(`/api/model-performance?ts=${Date.now()}`, {cache:"no-store"});
+            const j = await r.json();
+            const m = j.metrics || {};
+            set("modelName", m.model || "Random Forest Regression");
+            set("modelMae", m.mae !== null && m.mae !== undefined ? `${m.mae}%` : "--");
+            set("modelRmse", m.rmse !== null && m.rmse !== undefined ? `${m.rmse}%` : "--");
+            set("modelR2", m.r2_score !== null && m.r2_score !== undefined ? m.r2_score : "--");
+        } catch (e) { console.error(e); }
+    }
+
+    async function loadCalendar() {
+        try {
+            const r = await fetch(`/api/events?ts=${Date.now()}`, {cache:"no-store"});
+            const j = await r.json();
+            const grid = el("calendarGrid");
+            grid.innerHTML = "";
+            (j.events || []).forEach((event, idx) => {
+                const item = document.createElement("div");
+                item.className = "calendar-item" + (idx === 0 ? " top" : "");
+                item.innerHTML = `
+                    <div class="calendar-icon">📅</div>
+                    <h4>${escapeHtml(event.name)}</h4>
+                    <div class="calendar-date">${escapeHtml(dateFmt(event.start, true))}</div>
+                    <div class="calendar-meta">Type: ${escapeHtml(event.type)}<br/>Intensity: ×${escapeHtml(event.intensity)}</div>
+                `;
+                grid.appendChild(item);
+            });
+            if (!j.events?.length) grid.innerHTML = `<div class="loading">No events found.</div>`;
+        } catch (e) {
+            console.error(e);
+            el("calendarGrid").innerHTML = `<div class="notice">Unable to load event calendar.</div>`;
+        }
+    }
+
+    function escapeHtml(v) {
+        return String(v ?? "")
+            .replaceAll("&","&amp;")
+            .replaceAll("<","&lt;")
+            .replaceAll(">","&gt;")
+            .replaceAll('"',"&quot;")
+            .replaceAll("'","&#039;");
+    }
+
+    async function prepareScaling() {
+        try {
+            const r = await fetch("/api/prepare-scaling", {method:"POST"});
+            const j = await r.json();
+            showToast(j.success ? "Predictive capacity prepared." : (j.message || "No preparation required."));
+            await loadCurrentData();
+            await loadForecast();
+        } catch (e) { showToast(`Preparation error: ${e.message}`); }
+    }
+
+    async function executeScaling() {
+        try {
+            const r = await fetch("/api/execute-scaling", {method:"POST"});
+            const j = await r.json();
+            showToast(j.success ? `Scaling executed: ${j.current_instances} instances.` : (j.message || "No prepared plan."));
+            await loadCurrentData();
+            await loadForecast();
+        } catch (e) { showToast(`Execution error: ${e.message}`); }
+    }
+
+    async function scaleDown() {
+        try {
+            const r = await fetch("/api/scale-down", {method:"POST"});
+            const j = await r.json();
+            showToast(j.message || "Returned to baseline.");
+            await loadCurrentData();
+            await loadForecast();
+        } catch (e) { showToast(`Scale-down error: ${e.message}`); }
+    }
+
+    function updateClock() {
+        set("topClock", new Date().toLocaleString("en-IN", {
+            day:"2-digit", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit", second:"2-digit"
+        }));
+    }
+
+    async function init() {
+        updateClock();
+        await Promise.all([loadCurrentData(), loadForecast(), loadMetrics(), loadCalendar()]);
+    }
+
+    setInterval(updateClock, 1000);
+    setInterval(async () => {
+        await loadCurrentData();
+        await loadForecast();
+    }, 30000);
+
+    init();
+</script>
+</body>
+</html>

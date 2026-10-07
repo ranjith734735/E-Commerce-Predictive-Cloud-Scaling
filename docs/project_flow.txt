@@ -1,0 +1,11 @@
+PROJECT FLOW
+
+1. Read current e-commerce workload.
+2. Check the event calendar automatically.
+3. Detect Normal Sales, Weekend Sales, seasonal or festival sales, Mega Sale, etc.
+4. Use event intensity and historical workload features.
+5. Random Forest predicts future CPU utilization.
+6. Calculate required cloud instances for a 70% target CPU.
+7. Recommend proactive scale-up before a predicted peak.
+8. Recommend returning toward baseline after workload falls.
+9. Display the result on the dashboard.
